@@ -9,7 +9,6 @@ import {Textarea} from './components/ui/textarea';
 import {Switch} from './components/ui/switch';
 import {Label} from './components/ui/label';
 import {Slider} from './components/ui/slider';
-import TeamFormationLogo from "./components/TeamFormationLogo";
 
 const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -147,11 +146,13 @@ const TeamFormationTool = () => {
         <div className={`min-h-screen w-full ${darkMode ? 'dark' : ''}`}>
             <div className="fixed inset-0 bg-white dark:bg-gray-900 transition-colors duration-200"/>
             <div className="relative min-h-screen w-full overflow-auto"> {/* Scrollable content container */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="max-w-4xl mx-auto px-4 py-8">
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center space-x-4">
-                            <TeamFormationLogo width={50} height={50}/>
-                            <h1 className="text-2xl font-bold dark:text-white">Team Shuffler Tool</h1>
+                            {/*<TeamFormationLogo width={50} height={50}/>*/}
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white"><a
+                                href="https://tushar-naik.github.io/">Tushar Naik</a></h1>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">/ Shuffler</h1>
                         </div>
                         <div className="flex items-center space-x-2">
                             <Sun className="h-4 w-4 text-gray-500 dark:text-gray-400"/>
@@ -163,6 +164,11 @@ const TeamFormationTool = () => {
                             <Moon className="h-4 w-4 text-gray-500 dark:text-gray-400"/>
                         </div>
                     </div>
+                    <section className="mb-12 text-sm text-gray-500 dark:text-gray-400 ">
+                        This tool helps you create teams based on the skill levels of the players. <br/>You can either enter
+                        player data manually or upload a CSV file. <br/>The tool will then try to EQUALLY distribute the
+                        players across the teams based on their skill levels and preferred positions.
+                    </section>
 
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
                         <TabsList>
@@ -178,7 +184,7 @@ const TeamFormationTool = () => {
                                     <Textarea
                                         value={manualInput}
                                         onChange={(e) => setManualInput(e.target.value)}
-                                        placeholder="Enter player data here (format: Full Name, Preferred Position, Skill Level)"
+                                        placeholder="Enter player data here (format: Full Name, Preferred Position, Skill Level)&#10;Example:&#10;John Doe, Forward, Beginner&#10;Jane Doe, Goalkeeper, Intermediate&#10;"
                                         className="h-64"
                                     />
                                     <Button onClick={handleManualInput} className="mt-2">
