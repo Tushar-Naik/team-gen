@@ -53,7 +53,6 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "https://tushar-naik.github.io/team-gen",
   "devDependencies": {
     "gh-pages": "^6.1.1"
   }
