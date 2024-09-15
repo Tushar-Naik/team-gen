@@ -150,7 +150,7 @@ const TeamFormationTool = () => {
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center space-x-4">
                             {/*<TeamFormationLogo width={50} height={50}/>*/}
-                            <h1 className="text-3xl font-bold text-gray-900 dark:text-white"><a
+                            <h1 className="text-3xl font-bold text-gray-700 dark:text-white"><a
                                 href="https://tushar-naik.github.io/">Tushar Naik</a></h1>
                             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">/ Shuffler</h1>
                         </div>
