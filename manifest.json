@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Live the Oogway",
+  "name": "A set of tools to help you live the Oogway way",
   "icons": [
     {
       "src": "favicon.ico",
