@@ -5,10 +5,10 @@ import {Alert, AlertDescription, AlertTitle} from './components/ui/alert';
 import {Button} from './components/ui/button';
 import {Card, CardContent, CardHeader, CardTitle} from './components/ui/card';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from './components/ui/tabs';
-import {Input} from './components/ui/input';
 import {Textarea} from './components/ui/textarea';
 import {Switch} from './components/ui/switch';
 import {Label} from './components/ui/label';
+import {Slider} from './components/ui/slider';
 
 const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -115,6 +115,10 @@ const TeamFormationTool = () => {
         setError('');
     };
 
+    const handleSliderChange = (value) => {
+        setNumTeams(value[0] * 2);
+    };
+
     const sortedTeams = useMemo(() => {
         return teams.map(team =>
             [...team].sort((a, b) =>
@@ -207,13 +211,15 @@ const TeamFormationTool = () => {
                 </Tabs>
 
                 <div className="mb-4">
-                    <Label htmlFor="numTeams">Number of Teams:</Label>
-                    <Input
-                        type="number"
+                    <Label htmlFor="numTeams" className="block mb-2">Number of Teams: {numTeams}</Label>
+                    <Slider
                         id="numTeams"
-                        value={numTeams}
-                        onChange={(e) => setNumTeams(parseInt(e.target.value))}
-                        min="1"
+                        min={1}
+                        max={32}
+                        step={1}
+                        value={[numTeams / 2]}
+                        onValueChange={handleSliderChange}
+                        className="w-full"
                     />
                 </div>
 
