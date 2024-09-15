@@ -9,6 +9,7 @@ import {Textarea} from './components/ui/textarea';
 import {Switch} from './components/ui/switch';
 import {Label} from './components/ui/label';
 import {Slider} from './components/ui/slider';
+import TeamFormationLogo from "./components/TeamFormationLogo";
 
 const shuffleArray = (array) => {
     for (let i = array.length - 1; i > 0; i--) {
@@ -44,11 +45,12 @@ const isHeaderRow = (row) => {
     );
 };
 
-const skillLevelColors = {
-    'Not that good': 'bg-red-200 dark:bg-red-800',
-    'Decent': 'bg-yellow-200 dark:bg-yellow-800',
-    'Good': 'bg-green-200 dark:bg-green-800',
-    'Really Good': 'bg-blue-200 dark:bg-blue-800',
+const generateColors = (count) => {
+    const hueStep = 360 / count;
+    return Array.from({length: count}, (_, i) => {
+        const hue = i * hueStep;
+        return `hsl(${hue}, 70%, 60%)`;
+    });
 };
 
 const TeamFormationTool = () => {
@@ -66,8 +68,25 @@ const TeamFormationTool = () => {
         [players]
     );
 
+    const parsePlayerData = (data) => {
+        const separator = data.includes('\t') ? '\t' : ',';
+        const rows = data.split('\n').filter(row => row.trim() !== '');
+
+        // Check if the first row is a header
+        const isHeader = rows[0].toLowerCase().includes('full name') ||
+            rows[0].toLowerCase().includes('preferred position') ||
+            rows[0].toLowerCase().includes('skill level');
+
+        const startIndex = isHeader ? 1 : 0;
+
+        return rows.slice(startIndex).map(row => {
+            const [fullName, preferredPosition, skillLevel] = row.split(separator).map(item => item.trim());
+            return {'Full Name': fullName, 'Preferred Position': preferredPosition, 'Skill Level': skillLevel};
+        });
+    };
+
     const handleCSVUpload = useCallback((results) => {
-        let parsedPlayers = results.data;
+        let parsedPlayers = parsePlayerData(results.data.map(row => row.join(',')).join('\n'));
 
         if (isHeaderRow(parsedPlayers[0])) {
             parsedPlayers = parsedPlayers.slice(1);
@@ -88,18 +107,15 @@ const TeamFormationTool = () => {
     }, []);
 
     const handleManualInput = () => {
-        const lines = manualInput.split('\n').filter(line => line.trim() !== '');
-
-        const startIndex = isHeaderRow(lines[0].split(',')) ? 1 : 0;
-
-        const parsedPlayers = lines.slice(startIndex).map(line => {
-            const [fullName, preferredPosition, skillLevel] = line.split(',').map(item => item.trim());
-            return {'Full Name': fullName, 'Preferred Position': preferredPosition, 'Skill Level': skillLevel};
-        });
-
+        const parsedPlayers = parsePlayerData(manualInput);
         setPlayers(parsedPlayers);
         setError('');
     };
+
+    const skillColors = useMemo(() => {
+        const colors = generateColors(skillLevels.length);
+        return Object.fromEntries(skillLevels.map((level, index) => [level, colors[index]]));
+    }, [skillLevels]);
 
     const handleFormTeams = () => {
         if (players.length === 0) {
@@ -128,152 +144,161 @@ const TeamFormationTool = () => {
     }, [teams, skillLevels]);
 
     return (
-        <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
-
-            <div className={`container mx-auto p-4 ${darkMode ? 'dark' : ''}`}>
-                <div className="flex justify-between items-center mb-4">
-                    <h1 className="text-2xl font-bold">Team Formation Tool</h1>
-                    <div className="flex items-center space-x-2">
-                        <Sun className="h-4 w-4"/>
-                        <Switch
-                            checked={darkMode}
-                            onCheckedChange={setDarkMode}
-                            id="dark-mode"
-                        />
-                        <Moon className="h-4 w-4"/>
-                    </div>
-                </div>
-
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
-                    <TabsList>
-                        <TabsTrigger value="manual">Manual Input</TabsTrigger>
-                        <TabsTrigger value="csv">CSV Upload</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="manual">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Manual Input</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Textarea
-                                    value={manualInput}
-                                    onChange={(e) => setManualInput(e.target.value)}
-                                    placeholder="Enter player data here (format: Full Name, Preferred Position, Skill Level)"
-                                    className="h-64"
-                                />
-                                <Button onClick={handleManualInput} className="mt-2">
-                                    Process Manual Input
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="csv">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>CSV Upload</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CSVReader
-                                    onUploadAccepted={handleCSVUpload}
-                                    onUploadRejected={handleCSVError}
-                                    config={{
-                                        header: false,
-                                        dynamicTyping: true,
-                                        skipEmptyLines: true,
-                                    }}
-                                >
-                                    {({getRootProps, acceptedFile, ProgressBar, getRemoveFileProps}) => (
-                                        <>
-                                            <div
-                                                {...getRootProps()}
-                                                className="border-2 border-dashed border-gray-300 dark:border-gray-600 p-4 text-center cursor-pointer"
-                                            >
-                                                {acceptedFile ? (
-                                                    <>
-                                                        <div>{acceptedFile.name}</div>
-                                                        <Button {...getRemoveFileProps()} variant="destructive"
-                                                                className="mt-2">
-                                                            Remove
-                                                        </Button>
-                                                    </>
-                                                ) : (
-                                                    <span
-                                                        className="text-sm">Drop CSV file here or click to upload.</span>
-                                                )}
-                                            </div>
-                                            <ProgressBar/>
-                                        </>
-                                    )}
-                                </CSVReader>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-
-                <div className="mb-4">
-                    <Label htmlFor="numTeams" className="block mb-2">Number of Teams: {numTeams}</Label>
-                    <Slider
-                        id="numTeams"
-                        min={1}
-                        max={32}
-                        step={1}
-                        value={[numTeams / 2]}
-                        onValueChange={handleSliderChange}
-                        className="w-full"
-                    />
-                </div>
-
-                <Button onClick={handleFormTeams}>
-                    Form Teams
-                </Button>
-
-                {error && (
-                    <Alert variant="destructive" className="mt-4">
-                        <AlertCircle className="h-4 w-4"/>
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                {players.length > 0 && (
-                    <Card className="mt-4">
-                        <CardHeader>
-                            <CardTitle>Detected Skill Levels</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="list-disc list-inside">
-                                {skillLevels.map((level, index) => (
-                                    <li key={index}>{level}</li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {sortedTeams.length > 0 && (
-                    <div className="mt-8">
-                        <h2 className="text-xl font-bold mb-4">Formed Teams</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {sortedTeams.map((team, index) => (
-                                <Card key={index}>
-                                    <CardHeader>
-                                        <CardTitle>Team {index + 1}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <ul>
-                                            {team.map((player, playerIndex) => (
-                                                <li key={playerIndex}
-                                                    className={`mb-1 p-1 rounded ${skillLevelColors[player['Skill Level']]}`}>
-                                                    {player['Full Name']} - {player['Preferred Position']} ({player['Skill Level']})
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </CardContent>
-                                </Card>
-                            ))}
+        <div className={`min-h-screen w-full ${darkMode ? 'dark' : ''}`}>
+            <div className="fixed inset-0 bg-white dark:bg-gray-900 transition-colors duration-200"/>
+            <div className="relative min-h-screen w-full overflow-auto"> {/* Scrollable content container */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center space-x-4">
+                            <TeamFormationLogo width={50} height={50}/>
+                            <h1 className="text-2xl font-bold dark:text-white">Team Shuffler Tool</h1>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Sun className="h-4 w-4 text-gray-500 dark:text-gray-400"/>
+                            <Switch
+                                checked={darkMode}
+                                onCheckedChange={setDarkMode}
+                                id="dark-mode"
+                            />
+                            <Moon className="h-4 w-4 text-gray-500 dark:text-gray-400"/>
                         </div>
                     </div>
-                )}
+
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
+                        <TabsList>
+                            <TabsTrigger value="manual">Manual Input</TabsTrigger>
+                            <TabsTrigger value="csv">CSV Upload</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="manual">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Manual Input</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Textarea
+                                        value={manualInput}
+                                        onChange={(e) => setManualInput(e.target.value)}
+                                        placeholder="Enter player data here (format: Full Name, Preferred Position, Skill Level)"
+                                        className="h-64"
+                                    />
+                                    <Button onClick={handleManualInput} className="mt-2">
+                                        Process Manual Input
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                        <TabsContent value="csv">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>CSV Upload</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <CSVReader
+                                        onUploadAccepted={handleCSVUpload}
+                                        onUploadRejected={handleCSVError}
+                                        config={{
+                                            header: false,
+                                            dynamicTyping: true,
+                                            skipEmptyLines: true,
+                                        }}>
+                                        {({getRootProps, acceptedFile, ProgressBar, getRemoveFileProps}) => (
+                                            <>
+                                                <div
+                                                    {...getRootProps()}
+                                                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 p-4 text-center cursor-pointer">
+                                                    {acceptedFile ? (
+                                                        <>
+                                                            <div>{acceptedFile.name}</div>
+                                                            <Button {...getRemoveFileProps()} variant="destructive"
+                                                                    className="mt-2">
+                                                                Remove
+                                                            </Button>
+                                                        </>
+                                                    ) : (
+                                                        <span
+                                                            className="text-sm">Drop CSV file here or click to upload.</span>
+                                                    )}
+                                                </div>
+                                                <ProgressBar/>
+                                            </>
+                                        )}
+                                    </CSVReader>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+
+                    <div className="mb-4">
+                        <Label htmlFor="numTeams" className="block mb-2 dark:text-white">Number of
+                            Teams: {numTeams}</Label>
+                        <Slider
+                            id="numTeams"
+                            min={1}
+                            max={32}
+                            step={1}
+                            value={[numTeams / 2]}
+                            onValueChange={handleSliderChange}
+                            className="w-full"
+                        />
+                    </div>
+
+                    <Button onClick={handleFormTeams}>
+                        Form Teams
+                    </Button>
+
+                    {error && (
+                        <Alert variant="destructive" className="mt-4">
+                            <AlertCircle className="h-4 w-4"/>
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+
+                    {players.length > 0 && (
+                        <Card className="mt-4">
+                            <CardHeader>
+                                <CardTitle>Detected Skill Levels</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="list-disc list-inside">
+                                    {skillLevels.map((level, index) => (
+                                        <li key={index}>{level}</li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {sortedTeams.length > 0 && (
+                        <div className="mt-8">
+                            <h2 className="text-xl font-bold mb-4">Formed Teams</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {sortedTeams.map((team, index) => (
+                                    <Card key={index}>
+                                        <CardHeader>
+                                            <CardTitle>Team {index + 1}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <ul>
+                                                {team.map((player, playerIndex) => (
+                                                    <li
+                                                        key={playerIndex}
+                                                        className="mb-1 p-1 rounded"
+                                                        style={{
+                                                            backgroundColor: skillColors[player['Skill Level']],
+                                                            color: darkMode ? 'black' : 'white'
+                                                        }}>
+                                                        {player['Full Name']} - {player['Preferred Position']} ({player['Skill Level']})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
